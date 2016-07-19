@@ -8,28 +8,28 @@ import read_data
 import model_cnn
 import tensorflow as tf
 
-BATCH_SIZE = model_cnn.BATCH_SIZE
+BATCH_SIZE = 128
 NUM_EPOCHS = 100
 LEARNING_RATE = 1e-3
 
 
 def run_training():
     with tf.Graph().as_default():
-        images, labels = read_data.inputs(data_set='train', batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS)
-
-        logits = model_cnn.inference(images)
-
-        loss = model_cnn.loss(logits, labels)
-
-        train_op = model_cnn.training(loss, learning_rate=LEARNING_RATE)
-
-        train_accuracy = model_cnn.evaluation(logits, labels)
-
+        train_images, train_labels = read_data.inputs(data_set='train', batch_size=BATCH_SIZE, num_epochs=NUM_EPOCHS)
         # Don't specify number of epochs in validation set, otherwise that limits the training duration as the
         # validation set is 10 times smaller than the training set
         val_images, val_labels = read_data.inputs(data_set='validation', batch_size=BATCH_SIZE, num_epochs=None)
-        val_logits = model_cnn.inference(val_images)
-        val_accuracy = model_cnn.evaluation(val_logits, val_labels)
+
+        with tf.variable_scope("trained_variables"):    # THIS IS VERY IMPORTANT
+            train_logits = model_cnn.inference(train_images)
+            train_accuracy = model_cnn.evaluation(train_logits, train_labels)
+            tf.get_variable_scope().reuse_variables()   # THIS IS VERY IMPORTANT
+            val_logits = model_cnn.inference(val_images)
+            val_accuracy = model_cnn.evaluation(val_logits, val_labels)
+
+        loss = model_cnn.loss(train_logits, train_labels)
+
+        train_op = model_cnn.training(loss, learning_rate=LEARNING_RATE)
 
         init_op = tf.initialize_all_variables()
 
@@ -45,13 +45,13 @@ def run_training():
             while not coord.should_stop():
                 start_time = time.time()
 
-                _, loss_value, train_acc_val, valid_acc_val, logits_val, labels_val = sess.run([train_op, loss, train_accuracy, val_accuracy, logits, labels])
+                _, loss_value, train_acc_val = sess.run([train_op, loss, train_accuracy])
+                valid_acc_val = sess.run(val_accuracy)
 
                 duration = time.time() - start_time
                 assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
                 if step % 10 == 0:
-                #    print(logits_val, labels_val)
                     print('Step %d : loss = %.5f , training accuracy = %.1f, validation accuracy = %.1f (%.3f sec)'
                           % (step, loss_value, train_acc_val, valid_acc_val, duration))
                 step += 1

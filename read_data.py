@@ -62,7 +62,7 @@ def read_and_decode(filename_queue):
 def inputs(data_set, batch_size, num_epochs):
     """Reads input data num_epochs times.
     Args:
-    train: Selects between the train , validation and test data.
+    data_set: Selects between the train , validation and test data.
     batch_size: Number of examples per returned batch.
     num_epochs: Number of times to read the input data, or 0/None to
        train forever.
