@@ -10,8 +10,10 @@ import tensorflow as tf
 
 BATCH_SIZE = 128
 NUM_EPOCHS = 100
-LEARNING_RATE = 1e-3
-
+INITIAL_LEARNING_RATE = 1e-3
+LR_DECAY_FACTOR = 0.5
+EPOCHS_PER_LR_DECAY = 5
+NUM_TRAIN_EXAMPLES = read_data.NUM_TRAIN_EXAMPLES
 
 def run_training():
     with tf.Graph().as_default():
@@ -29,7 +31,8 @@ def run_training():
 
         loss = model_cnn.loss(train_logits, train_labels)
 
-        train_op = model_cnn.training(loss, learning_rate=LEARNING_RATE)
+        decay_steps = int(EPOCHS_PER_LR_DECAY * NUM_TRAIN_EXAMPLES / BATCH_SIZE)
+        train_op = model_cnn.training(loss, INITIAL_LEARNING_RATE, decay_steps, LR_DECAY_FACTOR)
 
         init_op = tf.initialize_all_variables()
 
@@ -45,8 +48,7 @@ def run_training():
             while not coord.should_stop():
                 start_time = time.time()
 
-                _, loss_value, train_acc_val = sess.run([train_op, loss, train_accuracy])
-                valid_acc_val = sess.run(val_accuracy)
+                _, loss_value, train_acc_val, valid_acc_val = sess.run([train_op, loss, train_accuracy, val_accuracy])
 
                 duration = time.time() - start_time
                 assert not np.isnan(loss_value), 'Model diverged with loss = NaN'

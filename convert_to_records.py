@@ -22,8 +22,9 @@ test_labels_file = 'data/testLabels.csv'
 IMG_HEIGHT = int(32)
 IMG_WIDTH = int(32)
 IMG_CHANNELS = 3
-validation_perc = 0.1
-
+NUM_FILES_DATASET = 60000
+VALIDATION_SET_FRACTION = 0.1
+NUM_TRAIN_EXAMPLES = int((1 - VALIDATION_SET_FRACTION) * NUM_FILES_DATASET)
 
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -62,7 +63,7 @@ def main(argv):
     test_images, test_labels = manage_images.read_images(test_data_path, test_labels_file, img_classes, IMG_HEIGHT, IMG_WIDTH)
 
     # Generate a validation set.
-    validation_size = int(validation_perc * train_images.shape[0])
+    validation_size = int(VALIDATION_SET_FRACTION * train_images.shape[0])
     validation_images = train_images[:validation_size, :, :, :]
     validation_labels = train_labels[:validation_size]
     train_images = train_images[validation_size:, :, :, :]

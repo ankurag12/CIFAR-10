@@ -11,13 +11,14 @@ import convert_to_records
 TRAIN_FILE = 'train.tfrecords'
 VALIDATION_FILE = 'validation.tfrecords'
 TEST_FILE = 'test.tfrecords'
-DATA_DIR = 'data/'                     # Local CPU
-#DATA_DIR = '/data1/ankur/CIFAR-10/'      # Berkeley GPU
+#DATA_DIR = 'data/'                     # Local CPU
+DATA_DIR = '/data1/ankur/CIFAR-10/'      # Berkeley GPU
 NUM_CLASSES = len(convert_to_records.img_classes)
 IMG_HEIGHT = convert_to_records.IMG_HEIGHT
 IMG_WIDTH = convert_to_records.IMG_WIDTH
 IMG_CHANNELS = convert_to_records.IMG_CHANNELS
 IMG_PIXELS = IMG_HEIGHT * IMG_WIDTH * IMG_CHANNELS
+NUM_TRAIN_EXAMPLES = convert_to_records.NUM_TRAIN_EXAMPLES
 
 # This function is not being used
 def dense_to_one_hot(labels_dense, num_classes):

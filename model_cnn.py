@@ -11,7 +11,6 @@ NUM_CLASSES = read_data.NUM_CLASSES
 DROP_PROB = 0.5
 REG_STRENGTH = 0.001
 
-
 # Use tf.get_variable() instead of tf.Variable() to be able to reuse variables for evaluation run
 def _variable_with_weight_decay(name, shape, stddev, wd):
     var = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev))
@@ -120,11 +119,12 @@ def loss(logits, labels):
     return total_loss
 
 
-def training(total_loss, learning_rate):
-
-    optimizer = tf.train.AdamOptimizer(learning_rate)
+def training(total_loss, initial_learning_rate, decay_steps, decay_factor):
 
     global_step = tf.Variable(0, name='global_step', trainable=False)
+
+    learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step, decay_steps, decay_factor, staircase=True)
+    optimizer = tf.train.AdamOptimizer(learning_rate)
 
     train_op = optimizer.minimize(total_loss, global_step=global_step)
 
