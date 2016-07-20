@@ -6,12 +6,20 @@ import read_data
 import numpy as np
 import tensorflow as tf
 
-
+NUM_TRAIN_EXAMPLES = read_data.NUM_TRAIN_EXAMPLES
 NUM_CLASSES = read_data.NUM_CLASSES
 DROP_PROB = 0.5
 REG_STRENGTH = 0.001
+INITIAL_LEARNING_RATE = 1e-3
+LR_DECAY_FACTOR = 0.5
+EPOCHS_PER_LR_DECAY = 5
+MOVING_AVERAGE_DECAY = 0.9999
+BATCH_SIZE = 128
+
 
 # Use tf.get_variable() instead of tf.Variable() to be able to reuse variables for evaluation run
+# This was necessary when sharing variables between train and eval run.
+# Not necessary now as eval run is based off saved checkpoints, which have moving average of the variables
 def _variable_with_weight_decay(name, shape, stddev, wd):
     var = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=stddev))
     if wd is not None:
@@ -104,7 +112,6 @@ def inference(images):
     with tf.variable_scope('softmax_linear') as scope:
         weights = _variable_with_weight_decay('weights', shape=[192, NUM_CLASSES], stddev=1/np.sqrt(192), wd=0.000)
         biases = tf.get_variable('biases', shape = [NUM_CLASSES], initializer=tf.constant_initializer(0.0))
-        # softmax_linear = tf.nn.softmax(tf.matmul(fc2_drop, weights) + biases, name=scope.name)#<--BLUNDER!
         logits = tf.add(tf.matmul(fc2_drop, weights), biases, name=scope.name)
 
     return logits
@@ -119,14 +126,20 @@ def loss(logits, labels):
     return total_loss
 
 
-def training(total_loss, initial_learning_rate, decay_steps, decay_factor):
+def training(total_loss):
 
     global_step = tf.Variable(0, name='global_step', trainable=False)
-
-    learning_rate = tf.train.exponential_decay(initial_learning_rate, global_step, decay_steps, decay_factor, staircase=True)
+    decay_steps = int(EPOCHS_PER_LR_DECAY * NUM_TRAIN_EXAMPLES / BATCH_SIZE)
+    learning_rate = tf.train.exponential_decay(INITIAL_LEARNING_RATE, global_step, decay_steps, LR_DECAY_FACTOR, staircase=True)
     optimizer = tf.train.AdamOptimizer(learning_rate)
 
-    train_op = optimizer.minimize(total_loss, global_step=global_step)
+    opt_op = optimizer.minimize(total_loss, global_step=global_step)
+
+    mov_average_object = tf.train.ExponentialMovingAverage(MOVING_AVERAGE_DECAY, global_step)
+    moving_average_op = mov_average_object.apply(tf.trainable_variables())
+
+    with tf.control_dependencies([opt_op]):
+        train_op = tf.group(moving_average_op)
 
     return train_op
 

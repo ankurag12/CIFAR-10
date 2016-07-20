@@ -6,18 +6,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import numpy as np
 from os.path import join
 import tensorflow as tf
 import manage_images
 
-img_classes = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
+IMG_CLASSES = ['airplane', 'automobile', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck']
 
-data_dir = 'data/'
-train_data_path = 'data/train/'
-test_data_path = 'data/test/'
-train_labels_file = 'data/trainLabels.csv'
-test_labels_file = 'data/testLabels.csv'
+DATA_DIR = 'data/'
+TRAIN_DATA_PATH = 'data/train/'
+TEST_DATA_PATH = 'data/test/'
+TRAIN_LABELS_FILE = 'data/trainLabels.csv'
+TEST_LABELS_FILE = 'data/testLabels.csv'
 
 IMG_HEIGHT = int(32)
 IMG_WIDTH = int(32)
@@ -25,6 +24,9 @@ IMG_CHANNELS = 3
 NUM_FILES_DATASET = 60000
 VALIDATION_SET_FRACTION = 0.1
 NUM_TRAIN_EXAMPLES = int((1 - VALIDATION_SET_FRACTION) * NUM_FILES_DATASET)
+NUM_VALIDATION_EXAMPLES = int(VALIDATION_SET_FRACTION * NUM_FILES_DATASET)
+NUM_TEST_EXAMPLES = 6000
+
 
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -43,7 +45,7 @@ def convert_to(images, labels, name):
     cols = images.shape[2]
     depth = images.shape[3]
 
-    filename = join(data_dir, name + '.tfrecords')
+    filename = join(DATA_DIR, name + '.tfrecords')
     print('Writing', filename)
     writer = tf.python_io.TFRecordWriter(filename)
     for index in range(num_examples):
@@ -59,8 +61,10 @@ def convert_to(images, labels, name):
 
 
 def main(argv):
-    train_images, train_labels = manage_images.read_images(train_data_path, train_labels_file, img_classes, IMG_HEIGHT, IMG_WIDTH)
-    test_images, test_labels = manage_images.read_images(test_data_path, test_labels_file, img_classes, IMG_HEIGHT, IMG_WIDTH)
+    train_images, train_labels = manage_images.read_images(TRAIN_DATA_PATH, TRAIN_LABELS_FILE, IMG_CLASSES,
+                                                           IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
+    test_images, test_labels = manage_images.read_images(TEST_DATA_PATH, TEST_LABELS_FILE, IMG_CLASSES,
+                                                         IMG_HEIGHT, IMG_WIDTH, IMG_CHANNELS)
 
     # Generate a validation set.
     validation_size = int(VALIDATION_SET_FRACTION * train_images.shape[0])
